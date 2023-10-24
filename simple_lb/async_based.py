@@ -11,6 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
 
 HDR_CONNECTION = "connection"
+APP_CONTEXT = "app_context"
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s", stream=sys.stdout)
 
@@ -53,6 +54,11 @@ class HttpClient:
             return await self._pool.send(*args, **kwargs)
         finally:
             await self.pool.__aexit__()
+
+
+@dataclass
+class AppContext:
+    http_client: HttpClient
 
 
 def validate_ipv4(ip):
@@ -160,12 +166,31 @@ async def get_proxied_response(client, incoming_req):
         return Response(status_code=response.status_code, headers=response.headers)
 
 
-def create_app():
-    http_client = HttpClient()
+async def handle_lifespan_cycle(scope, receive, send):
+    while True:
+        message = await receive()
+        if message["type"] == "lifespan.startup":
+            logger.info("Initializing app context")
+            scope["state"][APP_CONTEXT] = AppContext(http_client=HttpClient())
+            await send({"type": "lifespan.startup.complete"})
+        elif message["type"] == "lifespan.shutdown":
+            logger.info("Shutting down app context")
+            await scope["state"][APP_CONTEXT].http_client.pool.aclose()
+            await send({"type": "lifespan.shutdown.complete"})
+            return
 
-    async def app(scope, receive, send):
+
+async def app(scope, receive, send):
+    if scope["type"] == "lifespan":
+        await handle_lifespan_cycle(scope, receive, send)
+    else:
         method = scope.get("method")
         path = scope.get("path")
+        ctx = scope["state"].get(APP_CONTEXT)
+        if ctx is None:
+            response = Response(status_code=503, content="App context not initialized")
+            await response(scope, receive, send)
+            return
         logger.debug("Received request: %s %s", method, path)
         if method == "POST" and path == "/register":
             request = Request(scope, receive)
@@ -176,7 +201,10 @@ def create_app():
             response = Response(status_code=503, content="No targets registered")
             await response(scope, receive, send)
             return
-        response = await get_proxied_response(http_client, Request(scope, receive))
+        response = await get_proxied_response(ctx.http_client, Request(scope, receive))
         await response(scope, receive, send)
 
+
+def create_app():
+    logger.info("Creating app")
     return app
