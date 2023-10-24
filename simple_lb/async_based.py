@@ -89,8 +89,8 @@ class LoadBalancerTarget:
 
 
 class LoadBalancerTargets:
-    def __init__(self, *targets: List[LoadBalancerTarget]):
-        self.targets = targets
+    def __init__(self, *targets_list: LoadBalancerTarget):
+        self.targets: List[LoadBalancerTarget] = list(targets_list)
         self.current_index = -1
 
     def add(self, target: LoadBalancerTarget):
@@ -188,7 +188,7 @@ async def app(scope, receive, send):
         path = scope.get("path")
         ctx = scope["state"].get(APP_CONTEXT)
         if ctx is None:
-            response = Response(status_code=503, content="App context not initialized")
+            response = Response(status_code=500, content="App context not initialized")
             await response(scope, receive, send)
             return
         logger.debug("Received request: %s %s", method, path)
