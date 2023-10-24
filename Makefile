@@ -12,6 +12,9 @@ install:
 test:
 	poetry run pytest ${PYTEST_FLAGS}
 
+run-async:
+	poetry run uvicorn --reload --factory simple_lb.async_based:create_app
+
 testloop:
 	watch -n 3 poetry run pytest ${PYTEST_FLAGS}
 
