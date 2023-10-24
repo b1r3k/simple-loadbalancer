@@ -1,26 +1,24 @@
-# Modern python app boilerplate
+## Problem description
 
-Included in this boilerplate:
+Create a load balancing server to handle HTTP requests and distribute them to microservices. The server should offer the following endpoints:
 
- - pyenv for python version management
- - [poetry](https://python-poetry.org/) for dependency management
- - [pre-commit](https://pre-commit.com/) for linting and formatting
- - [pytest](https://docs.pytest.org/en/stable/) for testing
- - [black]() for formatting
- - [flake8]() for linting
- - [isort]() for sorting imports
- - [mypy]() for static type checking
+    /register: Receives parameters for URL path, IP address, and port. Upon receiving this request, the load balancer will start sending requests to the corresponding microservice.
 
+Requests to other endpoints are forwarded to microservices based on a Round Robin load balancing scheme. Replies are then sent back to the client.
 
-## How to start
+Example:
 
-1. Make sure you have python required interpreter installed in pyenv e.g.
-2. Rename app folder to your app name if needed (`mv simple_lb new_simple_lb`) and then:
+Microservice A registers: http://<load balancer>/register "/test", ip address, port
+Microservice B registers: http://<load balancer>/register "/test2", ip address, port
+Microservice C registers: http://<load balancer>/register "/test", ip address, port
+Microservice D registers: http://<load balancer>/register "/test", ip address, port
 
-       find ./ -type f -not -path "./.git/*" -exec sed -i 's/simple_lb/new_simple_lb/g' {} \;
-       find ./ -type f -not -path "./.git/*" -exec sed -i 's/simple-lb/new-simple-lb/g' {} \;
+When a client calls http://<load balancer>/test, the request will be forwarded to either A, C, or D.
 
-3. `make install`
-4. `make test`
-5. Make sure it's working: `poetry run app-cli "Developer"`
-6. Optionally, squeeze history into one commit: `git reset $(git commit-tree HEAD^{tree} -m "Initial commit")`
+Guidelines:
+
+- Time limit: 50 minutes
+- Focus on load balancer code; microservices implementation is not required.
+- Emphasize code structure, readability, and production-ready quality.
+- In-memory data structures (no need for a database).
+- You can use any Python web framework you're comfortable with (but **do not** use Django)
