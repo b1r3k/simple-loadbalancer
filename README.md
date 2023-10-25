@@ -22,3 +22,32 @@ Guidelines:
 - Emphasize code structure, readability, and production-ready quality.
 - In-memory data structures (no need for a database).
 - You can use any Python web framework you're comfortable with (but **do not** use Django)
+
+## Howto
+
+### Run
+
+1. Make sure you have poetry installed and pyenv wouldn't hurt too
+2. Install dependencies: `make install`
+3. Start async based solution: `make run-async`
+
+### Test
+
+1. Register target
+
+```bash
+curl -i -L -X POST \
+   -H "Content-Type:application/json" \
+   -d \
+'{
+  "ip_address": "99.83.207.200",
+  "port": 80
+}' \
+ 'http://localhost:8000/register'
+```
+
+2. Send request
+
+```bash
+curl -i -L -X GET 'http://localhost:8000/hello/world'
+```
